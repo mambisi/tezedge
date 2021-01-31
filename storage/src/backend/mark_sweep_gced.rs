@@ -35,14 +35,24 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count - 3).into_iter().flatten().collect();
-        let commit_to_retain = match self.commit_store.first() {
-            None => {None}
+        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count - 2).into_iter().flatten().collect();
+        match self.commit_store.first() {
+            None => {}
             Some(items) => {
-                items.front()
+                for i in items.iter() {
+                    garbage.remove(i);
+                }
             }
         };
-        self.mark_entries(&mut garbage, commit_to_retain);
+        match self.commit_store.last() {
+            None => {}
+            Some(items) => {
+                for i in items.iter() {
+                    garbage.remove(i);
+                }
+            }
+        };
+        //self.mark_entries(&mut garbage, commit_to_retain);
         self.sweep_entries(garbage);
         Ok(())
     }
@@ -58,7 +68,6 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     fn sweep_entries(&mut self, garbage: HashSet<EntryHash>) -> Result<(), KVStoreError> {
-        println!("Garbage collected count: {}", garbage.len());
         self.collect(garbage);
         Ok(())
     }
@@ -125,7 +134,7 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
     fn mark_reused(&mut self, _key: EntryHash) {}
 
     fn start_new_cycle(&mut self, _last_commit_hash: Option<EntryHash>) {
-        if self.commit_store.len() >= self.cycle_threshold * self.cycle_block_count {
+        if self.commit_store.len() == (1 + self.cycle_threshold) * self.cycle_block_count {
             self.gc();
         }
     }
@@ -137,7 +146,7 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
     }
 
     fn store_commit_tree(&mut self, commit_tree: LinkedHashSet<[u8; 32], RandomState>) {
-        self.commit_store.push(commit_tree);
+        self.commit_store.push(commit_tree)
     }
 
     fn collect(&mut self, garbage: HashSet<[u8; 32], RandomState>) -> Result<(), StorageBackendError> {
