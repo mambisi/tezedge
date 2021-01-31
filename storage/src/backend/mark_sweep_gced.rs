@@ -10,7 +10,7 @@ use std::collections::hash_map::RandomState;
 pub struct MarkSweepGCed<T: KVStore> {
     store: T,
     /// stores commit hashes
-    commit_store: Vec<EntryHash>,
+    commit_store: Vec<LinkedHashSet<EntryHash>>,
     /// number of cycles to retain
     cycle_threshold: usize,
     ///
@@ -38,7 +38,8 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage_roots: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count).collect();
+        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count).into_iter().flatten().collect();
+        /*
         let mut garbage: HashSet<EntryHash> = HashSet::new();
         for root in garbage_roots.iter() {
             if let Ok(Some(Entry::Commit(entry))) = self.get_entry(root) {
@@ -46,15 +47,18 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
             }else {
                 panic!()
             }
-        }
+        }*/
 
         match self.commit_store.first() {
             None => {}
-            Some(commit_to_retain) => {
-                self.mark_entries(&mut garbage, commit_to_retain);
+            Some(commit_tree) => {
+                for c in commit_tree.iter() {
+                    garbage.remove(c);
+                }
+                //self.mark_entries(&mut garbage, commit_to_retain);
             }
         };
-        match &self.last_commit_tree{
+        match self.commit_store.last() {
             None => {}
             Some(commit_tree) => {
                 for c in commit_tree.iter() {
@@ -102,6 +106,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         }
     }
 
+    /*
     fn collect_garbage_entries_recursively(&self, entry: &Entry, garbage: &mut HashSet<EntryHash>) {
         if let Ok(hash) = hash_entry(entry) {
             garbage.insert(hash);
@@ -125,6 +130,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
             }
         }
     }
+     */
 }
 
 
@@ -176,9 +182,7 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
     }
 
     fn store_commit_tree(&mut self, commit_tree: LinkedHashSet<[u8; 32], RandomState>) {
-        let commit = commit_tree.front().unwrap().clone();
-        self.commit_store.push(commit);
-        self.last_commit_tree = Some(commit_tree)
+        self.commit_store.push(commit_tree);
     }
 
     fn collect(&mut self, garbage: HashSet<[u8; 32], RandomState>) -> Result<(), StorageBackendError> {
