@@ -38,7 +38,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count).into_iter().flatten().collect();
+        let mut garbage: LinkedHashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count - 2).into_iter().flatten().collect();
         /*
         let mut garbage: HashSet<EntryHash> = HashSet::new();
         for root in garbage_roots.iter() {
@@ -58,19 +58,24 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         Ok(())
     }
 
-    fn mark_entries(&self, garbage: &mut HashSet<EntryHash>, entry_hash: &EntryHash) {
+    fn mark_entries(&self, garbage: &mut LinkedHashSet<EntryHash>, entry_hash: &EntryHash) {
         if let Ok(Some(Entry::Commit(entry))) = self.get_entry(entry_hash) {
             self.mark_entries_recursively(&Entry::Commit(entry), garbage);
+        }else {
+            panic!("Not commit")
         }
     }
 
-    fn sweep_entries(&mut self, garbage: HashSet<EntryHash>) -> Result<(), KVStoreError> {
+    fn sweep_entries(&mut self, garbage: LinkedHashSet<EntryHash>) -> Result<(), KVStoreError> {
         println!("Garbage Collection {} items", garbage.len());
-        self.collect(garbage);
+
+        for item in garbage {
+            self.store.delete(&item);
+        }
         Ok(())
     }
 
-    fn mark_entries_recursively(&self, entry: &Entry, garbage: &mut HashSet<EntryHash>) {
+    fn mark_entries_recursively(&self, entry: &Entry, garbage: &mut LinkedHashSet<EntryHash>) {
         if let Ok(hash) = hash_entry(entry) {
             garbage.remove(&hash);
             match entry {
