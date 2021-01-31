@@ -131,7 +131,7 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
     fn mark_reused(&mut self, _key: EntryHash) {}
 
     fn start_new_cycle(&mut self, _last_commit_hash: Option<EntryHash>) {
-        if self.commit_store.len() == self.cycle_threshold * self.cycle_block_count {
+        if self.commit_store.len() >= self.cycle_threshold * self.cycle_block_count {
             self.gc();
         }
     }
