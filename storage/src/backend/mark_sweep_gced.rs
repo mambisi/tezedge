@@ -35,15 +35,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count - 2).into_iter().flatten().collect();
-        match self.commit_store.first() {
-            None => {}
-            Some(items) => {
-                for i in items.iter() {
-                    garbage.remove(i);
-                }
-            }
-        };
+        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count).into_iter().flatten().collect();
         match self.commit_store.last() {
             None => {}
             Some(items) => {
@@ -61,13 +53,12 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         if let Some(entry_hash) = last_commit_hash {
             if let Ok(Some(Entry::Commit(entry))) = self.get_entry(entry_hash) {
                 self.mark_entries_recursively(&Entry::Commit(entry), garbage);
-            }else {
-                panic!("Not Root")
             }
         }
     }
 
     fn sweep_entries(&mut self, garbage: HashSet<EntryHash>) -> Result<(), KVStoreError> {
+        println!("Garbage Collection {} items", garbage.len());
         self.collect(garbage);
         Ok(())
     }
