@@ -3,6 +3,8 @@ use sled::IVec;
 use crate::storage_backend::{StorageBackend, StorageBackendStats, StorageBackendError};
 use crate::merkle_storage::{EntryHash, ContextValue};
 use std::collections::HashSet;
+use linked_hash_set::LinkedHashSet;
+use std::collections::hash_map::RandomState;
 
 pub struct SledBackend {
     inner: sled::Tree
@@ -58,5 +60,13 @@ impl StorageBackend for SledBackend {
     fn wait_for_gc_finish(&self) { }
     fn get_stats(&self) -> Vec<StorageBackendStats> {
       unimplemented!()
+    }
+
+    fn store_commit_tree(&mut self, commit_tree: LinkedHashSet<[u8; 32], RandomState>) {
+        unimplemented!()
+    }
+
+    fn collect(&mut self, _garbage: HashSet<[u8; 32], RandomState>) -> Result<(), StorageBackendError> {
+        unimplemented!()
     }
 }

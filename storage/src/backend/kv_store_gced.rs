@@ -9,12 +9,9 @@ use crypto::hash::HashType;
 use serde::Serialize;
 
 use crate::merkle_storage::{Entry, EntryHash, ContextValue};
-use crate::storage_backend::{
-    StorageBackend as KVStore,
-    StorageBackendError as KVStoreError,
-    StorageBackendStats as KVStoreStats,
-    size_of_vec,
-};
+use crate::storage_backend::{StorageBackend as KVStore, StorageBackendError as KVStoreError, StorageBackendStats as KVStoreStats, size_of_vec, StorageBackendError};
+use linked_hash_set::LinkedHashSet;
+use std::collections::hash_map::RandomState;
 
 
 // TODO: add assertions for EntryHash to make sure it is stack allocated.
@@ -176,6 +173,14 @@ impl<T: 'static + KVStore + Default> KVStore for KVStoreGCed<T> {
             .chain(vec![&self.current_stats])
             .cloned()
             .collect()
+    }
+
+    fn store_commit_tree(&mut self, commit_tree: LinkedHashSet<[u8; 32], RandomState>) {
+        unimplemented!()
+    }
+
+    fn collect(&mut self, garbage: HashSet<[u8; 32], RandomState>) -> Result<(), StorageBackendError> {
+        unimplemented!()
     }
 }
 

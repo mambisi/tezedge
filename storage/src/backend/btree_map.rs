@@ -1,12 +1,10 @@
 use std::collections::{BTreeMap, btree_map::Entry, HashSet};
 use rayon::prelude::*;
 
-use crate::storage_backend::{
-    StorageBackend as KVStoreTrait,
-    StorageBackendStats as KVStoreStats,
-    StorageBackendError as KVStoreError,
-};
+use crate::storage_backend::{StorageBackend as KVStoreTrait, StorageBackendStats as KVStoreStats, StorageBackendError as KVStoreError, StorageBackendError};
 use crate::merkle_storage::{EntryHash, ContextValue};
+use linked_hash_set::LinkedHashSet;
+use std::collections::hash_map::RandomState;
 
 
 /// In Memory Key Value Store implemented with [BTreeMap](std::collections::BTreeMap)
@@ -79,6 +77,14 @@ impl KVStoreTrait for KVStore<EntryHash, ContextValue> {
     fn wait_for_gc_finish(&self) { }
     fn get_stats(&self) -> Vec<KVStoreStats> {
       unimplemented!()
+    }
+
+    fn store_commit_tree(&mut self, commit_tree: LinkedHashSet<[u8; 32], RandomState>) {
+        unimplemented!()
+    }
+
+    fn collect(&mut self, garbage: HashSet<[u8; 32], RandomState>) -> Result<(), StorageBackendError> {
+        unimplemented!()
     }
 }
 

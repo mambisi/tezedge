@@ -117,7 +117,7 @@ fn gen_stats(args: Args) {
             KVStoreGCed::<BTreeMapBackend>::new(args.preserved_cycles)
         ),
         "in-memory-mark-sweep-gced" => Box::new(
-            MarkSweepGCed::<InMemoryBackend>::new(args.preserved_cycles)
+            MarkSweepGCed::<InMemoryBackend>::new(args.preserved_cycles, args.cycle_block_count as usize)
         ),
         _ => {
             eprintln!("unsupported backend supplied: {}", args.backend);
