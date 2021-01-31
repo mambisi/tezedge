@@ -49,6 +49,15 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
             }
         }*/
 
+        match self.commit_store.last() {
+            None => {}
+            Some(commit_tree) => {
+                for c in commit_tree.iter() {
+                    garbage.remove(c);
+                }
+            }
+        };
+
         match self.commit_store.first() {
             None => {}
             Some(commit_tree) => {
@@ -58,14 +67,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
                 //self.mark_entries(&mut garbage, commit_to_retain);
             }
         };
-        match self.commit_store.last() {
-            None => {}
-            Some(commit_tree) => {
-                for c in commit_tree.iter() {
-                    garbage.remove(c);
-                }
-            }
-        };
+
         self.sweep_entries(garbage);
         Ok(())
     }
