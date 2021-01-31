@@ -38,7 +38,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count - 2 ).into_iter().flatten().collect();
+        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count).into_iter().flatten().collect();
         /*
         let mut garbage: HashSet<EntryHash> = HashSet::new();
         for root in garbage_roots.iter() {
@@ -49,24 +49,10 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
             }
         }*/
 
-        match self.commit_store.last() {
-            None => {}
-            Some(commit_tree) => {
-                for c in commit_tree.iter() {
-                    garbage.remove(c);
-                }
-            }
-        };
+        for i in self.commit_store.iter().flatten() {
+            garbage.remove(i)
+        }
 
-        match self.commit_store.first() {
-            None => {}
-            Some(commit_tree) => {
-                for c in commit_tree.iter() {
-                    garbage.remove(c);
-                }
-                //self.mark_entries(&mut garbage, commit_to_retain);
-            }
-        };
 
         self.sweep_entries(garbage);
         Ok(())
