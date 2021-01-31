@@ -5,12 +5,13 @@ use crate::merkle_storage::{Entry, EntryHash, ContextValue, hash_entry};
 use crate::storage_backend::{StorageBackend as KVStore, StorageBackendError as KVStoreError, StorageBackendStats as KVStoreStats, size_of_vec, StorageBackendError};
 use linked_hash_set::LinkedHashSet;
 use std::collections::hash_map::RandomState;
+use rayon::prelude::*;
 
 /// Garbage Collected Key Value Store
 pub struct MarkSweepGCed<T: KVStore> {
     store: T,
     /// stores commit hashes
-    commit_store: Vec<LinkedHashSet<EntryHash>>,
+    commit_store: Vec<EntryHash>,
     /// number of cycles to retain
     cycle_threshold: usize,
     ///
@@ -35,7 +36,12 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count).into_iter().flatten().collect();
+        let mut garbage_root: HashSet<_> = self.commit_store.drain(0..self.cycle_block_count).collect();
+
+        let garbage_channel =
+
+
+
         let commit_to_retain = match self.commit_store.first() {
             None => {None}
             Some(items) => {
@@ -60,13 +66,15 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         Ok(())
     }
 
-    fn mark_entries_recursively(&self, entry: &Entry, garbage: &mut HashSet<EntryHash>) {
+    fn mark_entries_recursively(&self, entry: &Entry, garbage: Arc<HashSet<EntryHash>>) {
+
         if let Ok(hash) = hash_entry(entry) {
             garbage.remove(&hash);
             match entry {
                 Entry::Blob(_) => {}
                 Entry::Tree(tree) => {
-                    tree.iter().for_each(|(key, child_node)| {
+
+                    tree.par_iter().for_each(|(key, child_node)| {
                         match self.get_entry(&child_node.entry_hash) {
                             Ok(Some(entry)) => self.mark_entries_recursively(&entry, garbage),
                             _ => {}
@@ -133,7 +141,7 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
         self.store.get_stats()
     }
 
-    fn store_commit_tree(&mut self, commit_tree: LinkedHashSet<[u8; 32], RandomState>) {
+    fn store_commit_hash(&mut self, commit_tree: EntryHash) {
         self.commit_store.push(commit_tree)
     }
 

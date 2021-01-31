@@ -67,7 +67,7 @@ pub trait StorageBackend: Send + Sync {
     fn start_new_cycle(&mut self, last_commit_hash: Option<EntryHash>);
     fn wait_for_gc_finish(&self);
     fn get_stats(&self) -> Vec<StorageBackendStats>;
-    fn store_commit_tree(&mut self, commit_tree : LinkedHashSet<EntryHash>);
+    fn store_commit_hash(&mut self, commit_hash : EntryHash);
     fn collect(&mut self, garbage : HashSet<[u8;32]>) -> Result<(), StorageBackendError>;
     fn get_total_stats(&self) -> StorageBackendStats {
         self.get_stats().iter().sum()

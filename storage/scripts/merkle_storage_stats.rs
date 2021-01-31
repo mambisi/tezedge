@@ -133,11 +133,11 @@ fn gen_stats(args: Args) {
         let actions_len = actions.len();
 
         for action in actions.into_iter() {
-            // if let ContextAction::Commit { new_context_hash, .. } = &action {
-            //     cycle_commit_hashes.last_mut().unwrap().push(
-            //         new_context_hash[..].try_into().unwrap()
-            //     );
-            // }
+            if let ContextAction::Commit { new_context_hash, .. } = &action {
+                 cycle_commit_hashes.last_mut().unwrap().push(
+                     new_context_hash[..].try_into().unwrap()
+                 );
+             }
             merkle.apply_context_action(&action).unwrap();
         }
 

@@ -62,11 +62,13 @@ impl StorageBackend for SledBackend {
       unimplemented!()
     }
 
-    fn store_commit_tree(&mut self, commit_tree: LinkedHashSet<[u8; 32], RandomState>) {
+
+
+    fn collect(&mut self, _garbage: HashSet<[u8; 32], RandomState>) -> Result<(), StorageBackendError> {
         unimplemented!()
     }
 
-    fn collect(&mut self, _garbage: HashSet<[u8; 32], RandomState>) -> Result<(), StorageBackendError> {
+    fn store_commit_hash(&mut self, commit_hash: [u8; 32]) {
         unimplemented!()
     }
 }
