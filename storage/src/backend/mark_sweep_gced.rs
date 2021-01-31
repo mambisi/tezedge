@@ -49,8 +49,10 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
 
     fn mark_entries(&self, garbage: &mut HashSet<EntryHash>, last_commit_hash: Option<&EntryHash>) {
         if let Some(entry_hash) = last_commit_hash {
-            if let Ok(Some(entry)) = self.get_entry(entry_hash) {
-                self.mark_entries_recursively(&entry, garbage);
+            if let Ok(Some(Entry::Commit(entry))) = self.get_entry(entry_hash) {
+                self.mark_entries_recursively(&Entry::Commit(entry), garbage);
+            }else {
+                panic!("Not Root")
             }
         }
     }
