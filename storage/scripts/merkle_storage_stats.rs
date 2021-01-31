@@ -94,7 +94,7 @@ impl Args {
                 .parse()
                 .unwrap(),
             cycle_block_count: matches.value_of("cycle_block_count")
-                .unwrap_or("2048")
+                .unwrap_or("4092")
                 .parse()
                 .unwrap(),
             actions_file: matches.value_of("actions_file")
