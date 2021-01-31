@@ -35,7 +35,8 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage = self.commit_store.pop().unwrap();
+
+        let mut garbage = self.commit_store.remove(0);
         match self.commit_store.first() {
             None => {}
             Some(items) => {
