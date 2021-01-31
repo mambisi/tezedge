@@ -71,7 +71,7 @@ impl Args {
                 .default_value("5"))
             .arg(Arg::with_name("cycle_block_count")
                 .help("amount of blocks in each cycle")
-                .default_value("2048"))
+                .default_value("4092"))
             .arg(Arg::with_name("actions_file")
                 .required(true)
                 .help("path to the actions.bin")
