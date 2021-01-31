@@ -38,7 +38,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage: LinkedHashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count - 2).into_iter().flatten().collect();
+        let mut garbage: LinkedHashSet<EntryHash> = self.commit_store.drain(..self.cycle_block_count).into_iter().flatten().collect();
         /*
         let mut garbage: HashSet<EntryHash> = HashSet::new();
         for root in garbage_roots.iter() {
@@ -166,7 +166,7 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
     fn mark_reused(&mut self, _key: EntryHash) {}
 
     fn start_new_cycle(&mut self, _last_commit_hash: Option<EntryHash>) {
-        if self.commit_store.len() >= self.cycle_threshold * self.cycle_block_count {
+        if self.commit_store.len() >= ( self.cycle_threshold  + 1)* self.cycle_block_count {
             self.gc();
         }
     }
