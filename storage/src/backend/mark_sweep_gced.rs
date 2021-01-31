@@ -40,7 +40,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
             None => {None}
             Some(items) => {
                 for item in items.iter() {
-                    garbage.remove(item)
+                    garbage.remove(item);
                 }
             }
         };
