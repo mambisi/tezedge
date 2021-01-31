@@ -72,6 +72,9 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     fn sweep_entries(&mut self, garbage: &mut RwLockWriteGuard<HashSet<EntryHash>>) -> Result<(), KVStoreError> {
+
+        println!("Removing Items {}", garbage.len());
+
         for entry_hash in garbage.iter() {
             self.delete(entry_hash);
         }

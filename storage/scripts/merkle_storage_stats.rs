@@ -176,6 +176,7 @@ fn gen_stats(args: Args) {
         }
 
         let stats = merkle.get_merkle_stats().unwrap();
+
         println!("{}, {}, {}, {}, {}, {}, {}",
                  block.block_level,
                  stats.kv_store_stats.key_bytes,
