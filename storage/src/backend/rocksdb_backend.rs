@@ -3,6 +3,9 @@ use std::sync::Arc;
 use serde::{Serialize, Deserialize};
 use crate::storage_backend::{StorageBackend, StorageBackendStats, StorageBackendError};
 use crate::merkle_storage::{EntryHash, ContextValue};
+use std::collections::HashSet;
+use linked_hash_set::LinkedHashSet;
+use std::collections::hash_map::RandomState;
 
 pub struct RocksDBBackend {
     column_name: &'static str,
@@ -84,7 +87,7 @@ impl StorageBackend for RocksDBBackend {
         self.get(key).map(|v| v.is_some())
     }
 
-    fn retain(&mut self, pred: Vec<EntryHash>) -> Result<(), StorageBackendError> {
+    fn retain(&mut self, pred: HashSet<EntryHash>) -> Result<(), StorageBackendError> {
         unimplemented!()
     }
 
@@ -93,5 +96,13 @@ impl StorageBackend for RocksDBBackend {
     fn wait_for_gc_finish(&self) { }
     fn get_stats(&self) -> Vec<StorageBackendStats> {
       unimplemented!()
+    }
+
+    fn store_commit_tree(&mut self, commit_tree: LinkedHashSet<[u8; 32], RandomState>) {
+        unimplemented!()
+    }
+
+    fn collect(&mut self, garbage: HashSet<[u8; 32], RandomState>) -> Result<(), StorageBackendError> {
+        unimplemented!()
     }
 }

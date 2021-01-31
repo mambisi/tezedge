@@ -1695,6 +1695,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 
 [[package]]
+name = "linked_hash_set"
+version = "0.1.4"
+source = "git+https://github.com/mambisi/linked-hash-set.git#a24b7a5ac9c26269eae013fb3e3f15c29f4275f9"
+dependencies = [
+ "linked-hash-map 0.5.4",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3059,6 +3067,7 @@ dependencies = [
  "getset",
  "hex",
  "itertools 0.10.0",
+ "linked_hash_set",
  "maplit",
  "num_cpus",
  "rand 0.7.3",

@@ -30,6 +30,7 @@ rlimit = "0.4.0"
 snap = "1.0.3"
 clap = "2.33.3"
 bytes = "1.0.1"
+linked_hash_set = { git = "https://github.com/mambisi/linked-hash-set.git" }
 
 [[bench]]
 name = "predecessor_benchmarks"

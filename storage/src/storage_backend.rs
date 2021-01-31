@@ -4,6 +4,7 @@ use failure::Fail;
 use serde::Serialize;
 
 use crate::merkle_storage::{EntryHash, ContextValue};
+use linked_hash_set::LinkedHashSet;
 
 pub fn size_of_vec<T>(v: &Vec<T>) -> usize {
     mem::size_of::<Vec<T>>() + mem::size_of::<T>() * v.capacity()
@@ -61,12 +62,13 @@ pub trait StorageBackend: Send + Sync {
     fn merge(&mut self, key: EntryHash, value: ContextValue) -> Result<(), StorageBackendError>;
     fn delete(&mut self, key: &EntryHash) -> Result<Option<ContextValue>, StorageBackendError>;
     fn contains(&self, key: &EntryHash) -> Result<bool, StorageBackendError>;
-    fn retain(&mut self, pred: Vec<EntryHash>) -> Result<(), StorageBackendError>;
+    fn retain(&mut self, pred: HashSet<EntryHash>) -> Result<(), StorageBackendError>;
     fn mark_reused(&mut self, key: EntryHash);
     fn start_new_cycle(&mut self, last_commit_hash: Option<EntryHash>);
     fn wait_for_gc_finish(&self);
     fn get_stats(&self) -> Vec<StorageBackendStats>;
-
+    fn store_commit_tree(&mut self, commit_tree : LinkedHashSet<EntryHash>);
+    fn collect(&mut self, garbage : HashSet<[u8;32]>) -> Result<(), StorageBackendError>;
     fn get_total_stats(&self) -> StorageBackendStats {
         self.get_stats().iter().sum()
     }
