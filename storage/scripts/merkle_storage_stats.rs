@@ -175,20 +175,20 @@ fn gen_stats(args: Args) {
             // merkle.apply_context_action(&action).unwrap();
         }
 
-        let stats = merkle.get_merkle_stats().unwrap();
-        println!("{}, {}, {}, {}, {}, {}, {}",
-                 block.block_level,
-                 stats.kv_store_stats.key_bytes,
-                 stats.kv_store_stats.value_bytes,
-                 stats.kv_store_stats.reused_keys_bytes,
-                 stats.kv_store_stats.total_as_bytes(),
-                 mem_usage(),
-                 merkle.get_block_latency(0).unwrap(),
-        );
 
         let level = block.block_level;
 
         if level % args.cycle_block_count == 0 && level > 0 {
+            let stats = merkle.get_merkle_stats().unwrap();
+            println!("{}, {}, {}, {}, {}, {}, {}",
+                     block.block_level,
+                     stats.kv_store_stats.key_bytes,
+                     stats.kv_store_stats.value_bytes,
+                     stats.kv_store_stats.reused_keys_bytes,
+                     stats.kv_store_stats.total_as_bytes(),
+                     mem_usage(),
+                     merkle.get_block_latency(0).unwrap(),
+            );
             merkle.start_new_cycle().unwrap();
 
             // let commits_iter = cycle_commit_hashes.iter()
