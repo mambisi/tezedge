@@ -38,7 +38,16 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count).collect();
+        let mut garbage_roots: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count).collect();
+        let mut garbage: HashSet<EntryHash> = HashSet::new();
+        for root in garbage_roots.iter() {
+            if let Ok(Some(Entry::Commit(entry))) = self.get_entry(root) {
+                self.collect_garbage_entries_recursively(&Entry::Commit(entry), &mut garbage);
+            }else {
+                panic!()
+            }
+        }
+
         match self.commit_store.first() {
             None => {}
             Some(commit_to_retain) => {
@@ -72,6 +81,30 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     fn mark_entries_recursively(&self, entry: &Entry, garbage: &mut HashSet<EntryHash>) {
         if let Ok(hash) = hash_entry(entry) {
             garbage.remove(&hash);
+            match entry {
+                Entry::Blob(_) => {}
+                Entry::Tree(tree) => {
+                    tree.iter().for_each(|(key, child_node)| {
+                        match self.get_entry(&child_node.entry_hash) {
+                            Ok(Some(entry)) => self.mark_entries_recursively(&entry, garbage),
+                            _ => {}
+                        };
+                    });
+                }
+                Entry::Commit(commit) => {
+                    match self.get_entry(&commit.root_hash) {
+                        Ok(Some(entry)) => self.mark_entries_recursively(&entry, garbage),
+                        _ => {}
+                        Err(_) => {}
+                    }
+                }
+            }
+        }
+    }
+
+    fn collect_garbage_entries_recursively(&self, entry: &Entry, garbage: &mut HashSet<EntryHash>) {
+        if let Ok(hash) = hash_entry(entry) {
+            garbage.insert(hash);
             match entry {
                 Entry::Blob(_) => {}
                 Entry::Tree(tree) => {
