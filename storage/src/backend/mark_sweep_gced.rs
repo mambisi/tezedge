@@ -124,9 +124,7 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
     fn mark_reused(&mut self, _key: EntryHash) {}
 
     fn start_new_cycle(&mut self, _last_commit_hash: Option<EntryHash>) {
-        if self.commit_store.len() >= (1 + self.cycle_threshold) * self.cycle_block_count {
-            self.gc();
-        }
+
     }
 
     fn wait_for_gc_finish(&self) {}
@@ -136,7 +134,10 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
     }
 
     fn store_commit_tree(&mut self, commit_tree: LinkedHashSet<[u8; 32], RandomState>) {
-        self.commit_store.push(commit_tree)
+        self.commit_store.push(commit_tree);
+        if self.commit_store.len() == (1 + self.cycle_threshold) * self.cycle_block_count {
+            self.gc();
+        }
     }
 
     fn collect(&mut self, garbage: HashSet<[u8; 32], RandomState>) -> Result<(), StorageBackendError> {
