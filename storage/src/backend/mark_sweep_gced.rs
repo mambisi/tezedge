@@ -139,7 +139,7 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
 
     fn store_commit_tree(&mut self, commit_tree: LinkedHashSet<[u8; 32], RandomState>) {
         self.commit_store.push(commit_tree);
-        if self.commit_store.len() == (self.cycle_threshold * self.cycle_block_count) + 1 {
+        if self.commit_store.len() == (self.cycle_threshold * self.cycle_block_count) - 1 {
             self.gc();
         }
     }
