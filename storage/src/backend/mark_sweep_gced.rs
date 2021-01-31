@@ -35,7 +35,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count).into_iter().flatten().collect();
+        let mut garbage: HashSet<EntryHash> = self.commit_store.drain(0..self.cycle_block_count - 2).into_iter().flatten().collect();
         let commit_to_retain = match self.commit_store.first() {
             None => {None}
             Some(items) => {
@@ -124,7 +124,9 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
     fn mark_reused(&mut self, _key: EntryHash) {}
 
     fn start_new_cycle(&mut self, _last_commit_hash: Option<EntryHash>) {
-
+        if self.commit_store.len() == (1 + self.cycle_threshold) * self.cycle_block_count {
+            self.gc();
+        }
     }
 
     fn wait_for_gc_finish(&self) {}
@@ -134,10 +136,7 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
     }
 
     fn store_commit_tree(&mut self, commit_tree: LinkedHashSet<[u8; 32], RandomState>) {
-        self.commit_store.push(commit_tree);
-        if self.commit_store.len() == (1 + self.cycle_threshold) * self.cycle_block_count {
-            self.gc();
-        }
+        self.commit_store.push(commit_tree)
     }
 
     fn collect(&mut self, garbage: HashSet<[u8; 32], RandomState>) -> Result<(), StorageBackendError> {
