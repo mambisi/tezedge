@@ -37,7 +37,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
         let mut garbage: HashSet<EntryHash> = self.commit_store.drain(..1).into_iter().flatten().collect();
         match self.commit_store.first() {
-            None => {None}
+            None => {}
             Some(items) => {
                 for item in items.iter() {
                     garbage.remove(item);
