@@ -882,13 +882,11 @@ impl MerkleStorage {
         let new_commit_hash = hash_commit(&new_commit)?;
         self.put_to_staging_area(&new_commit_hash, entry.clone())?;
 
-        let mut commit_tree_hashes = LinkedHashSet::new();
-
-        self.persist_staged_entry_to_db(&entry, &mut commit_tree_hashes)?;
+        self.persist_staged_entry_to_db(&entry)?;
         self.staged = Vec::new();
         self.staged_indices = HashMap::new();
         self.last_commit_hash = Some(new_commit_hash.clone());
-        self.db.store_commit_tree(commit_tree_hashes);
+        self.db.store_commit_hash(new_commit_hash.clone());
 
         self.update_execution_stats("Commit".to_string(), None, &instant);
         Ok(new_commit_hash)
@@ -1327,14 +1325,13 @@ impl MerkleStorage {
         Ok(Some(idx))
     }
 
-    fn persist_staged_entry_to_db(&mut self, entry: &Entry, commit_tree_hashes : &mut LinkedHashSet<EntryHash>) -> Result<(), MerkleError> {
+    fn persist_staged_entry_to_db(&mut self, entry: &Entry) -> Result<(), MerkleError> {
         let entry_hash = hash_entry(entry)?;
         self.db.put(
             entry_hash.clone(),
             bincode::serialize(entry)?,
         )?;
         self.db.mark_reused(entry_hash);
-        commit_tree_hashes.insert(entry_hash);
 
         match entry {
             Entry::Blob(_) => Ok(()),
@@ -1347,7 +1344,7 @@ impl MerkleStorage {
                         // if child node isn't in staging area it means it
                         // hasn't changed from last commit and we should reuse it.
                         None => self.db.mark_reused(child_node.entry_hash),
-                        Some(entry) => self.persist_staged_entry_to_db(&entry,commit_tree_hashes)?,
+                        Some(entry) => self.persist_staged_entry_to_db(&entry)?,
                     }
                 }
                 Ok(())
@@ -1355,7 +1352,7 @@ impl MerkleStorage {
             Entry::Commit(commit) => {
                 match self.get_entry(&commit.root_hash) {
                     Err(err) => Err(err),
-                    Ok(entry) => self.persist_staged_entry_to_db(&entry, commit_tree_hashes),
+                    Ok(entry) => self.persist_staged_entry_to_db(&entry),
                 }
             }
         }

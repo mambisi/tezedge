@@ -6,6 +6,8 @@ use crate::storage_backend::{StorageBackend as KVStore, StorageBackendError as K
 use linked_hash_set::LinkedHashSet;
 use std::collections::hash_map::RandomState;
 use rayon::prelude::*;
+use std::sync::{mpsc, Arc, RwLock, RwLockWriteGuard};
+use std::sync::mpsc::{Sender, RecvError};
 
 /// Garbage Collected Key Value Store
 pub struct MarkSweepGCed<T: KVStore> {
@@ -36,24 +38,32 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage_root: HashSet<_> = self.commit_store.drain(0..self.cycle_block_count).collect();
+        let mut garbage_roots: HashSet<_> = self.commit_store.drain(0..self.cycle_block_count).collect();
 
-        let garbage_channel =
+        let garbage = Arc::new(RwLock::new(HashSet::new()));
+        let (sender, receiver) = mpsc::channel();
 
-
-
-        let commit_to_retain = match self.commit_store.first() {
-            None => {None}
-            Some(items) => {
-                items.front()
+        garbage_roots.iter().for_each(|entry_hash| {
+            if let Ok(Some(entry)) = self.get_entry(entry_hash) {
+                self.collect_entries_recursively(&entry,sender.clone(),garbage.clone())
             }
-        };
-        self.mark_entries(&mut garbage, commit_to_retain);
-        self.sweep_entries(garbage);
+        });
+
+        for msg in receiver {
+            let garbage = garbage.clone();
+            garbage.write().unwrap().insert(msg);
+        }
+
+        let commit_to_retain = self.commit_store.first();
+
+        let mut gwl = garbage.write().unwrap();
+
+        self.mark_entries(&mut gwl, commit_to_retain);
+        self.sweep_entries(&mut gwl);
         Ok(())
     }
 
-    fn mark_entries(&self, garbage: &mut HashSet<EntryHash>, last_commit_hash: Option<&EntryHash>) {
+    fn mark_entries(&self, garbage: &mut RwLockWriteGuard<HashSet<EntryHash>>, last_commit_hash: Option<&EntryHash>) {
         if let Some(entry_hash) = last_commit_hash {
             if let Ok(Some(entry)) = self.get_entry(entry_hash) {
                 self.mark_entries_recursively(&entry, garbage);
@@ -61,12 +71,14 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         }
     }
 
-    fn sweep_entries(&mut self, garbage: HashSet<EntryHash>) -> Result<(), KVStoreError> {
-        self.collect(garbage);
+    fn sweep_entries(&mut self, garbage: &mut RwLockWriteGuard<HashSet<EntryHash>>) -> Result<(), KVStoreError> {
+        for entry_hash in garbage.iter() {
+            self.delete(entry_hash);
+        }
         Ok(())
     }
 
-    fn mark_entries_recursively(&self, entry: &Entry, garbage: Arc<HashSet<EntryHash>>) {
+    fn mark_entries_recursively(&self, entry: &Entry, garbage: &mut HashSet<EntryHash>) {
 
         if let Ok(hash) = hash_entry(entry) {
             garbage.remove(&hash);
@@ -74,7 +86,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
                 Entry::Blob(_) => {}
                 Entry::Tree(tree) => {
 
-                    tree.par_iter().for_each(|(key, child_node)| {
+                    tree.iter().for_each(|(key, child_node)| {
                         match self.get_entry(&child_node.entry_hash) {
                             Ok(Some(entry)) => self.mark_entries_recursively(&entry, garbage),
                             _ => {}
@@ -84,6 +96,38 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
                 Entry::Commit(commit) => {
                     match self.get_entry(&commit.root_hash) {
                         Ok(Some(entry)) => self.mark_entries_recursively(&entry, garbage),
+                        _ => {}
+                        Err(_) => {}
+                    }
+                }
+            }
+        }
+    }
+
+    fn collect_entries_recursively(&self, entry: &Entry, collector: Sender<EntryHash>, garbage : Arc<RwLock<HashSet<EntryHash>>>) {
+
+        if let Ok(hash) = hash_entry(entry) {
+           // send if not visited
+            if garbage.read().unwrap().contains(&hash) {
+                return
+            }
+
+            collector.send(hash);
+
+            match entry {
+                Entry::Blob(_) => {}
+                Entry::Tree(tree) => {
+
+                    tree.iter().for_each(|(key, child_node)| {
+                        match self.get_entry(&child_node.entry_hash) {
+                            Ok(Some(entry)) => self.collect_entries_recursively(&entry, collector.clone(), garbage.clone()),
+                            _ => {}
+                        };
+                    });
+                }
+                Entry::Commit(commit) => {
+                    match self.get_entry(&commit.root_hash) {
+                        Ok(Some(entry)) => self.collect_entries_recursively(&entry, collector.clone(), garbage.clone()),
                         _ => {}
                         Err(_) => {}
                     }
