@@ -49,6 +49,9 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
             }
         }*/
 
+        println!("Commit F {:?}", garbage.front());
+        println!("Commit B {:?}", garbage.back());
+
         for i in self.commit_store.iter().flatten() {
             garbage.remove(i);
         }
