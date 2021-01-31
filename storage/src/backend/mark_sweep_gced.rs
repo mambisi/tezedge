@@ -35,7 +35,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     }
 
     pub fn gc(&mut self) -> Result<(), KVStoreError> {
-        let mut garbage: HashSet<EntryHash> = self.commit_store.pop().unwrap().iter().collect();
+        let mut garbage = self.commit_store.pop().unwrap();
         match self.commit_store.first() {
             None => {}
             Some(items) => {
@@ -59,8 +59,10 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         }
     }
 
-    fn sweep_entries(&mut self, garbage: HashSet<EntryHash>) -> Result<(), KVStoreError> {
-        self.collect(garbage);
+    fn sweep_entries(&mut self, garbage: LinkedHashSet<EntryHash>) -> Result<(), KVStoreError> {
+        for item in garbage {
+            self.store.delete(&item);
+        }
         Ok(())
     }
 
