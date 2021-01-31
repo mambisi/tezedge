@@ -50,7 +50,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         }*/
 
         for i in self.commit_store.iter().flatten() {
-            garbage.remove(i)
+            garbage.remove(i);
         }
 
 
