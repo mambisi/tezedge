@@ -42,15 +42,9 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         let mut garbage: LinkedHashSet<EntryHash> = self.commit_store.drain(..self.cycle_block_count).into_iter().flatten().collect();
 
 
-        /*
-        let mut garbage: HashSet<EntryHash> = HashSet::new();
-        for root in garbage_roots.iter() {
-            if let Ok(Some(Entry::Commit(entry))) = self.get_entry(root) {
-                self.collect_garbage_entries_recursively(&Entry::Commit(entry), &mut garbage);
-            }else {
-                panic!()
-            }
-        }*/
+        if let Ok(Some(h)) = last_commit_hash {
+            self.mark_entries(&mut garbage, h);
+        }
 
         println!("Commit F {:?}", HashType::ContextHash.hash_to_b58check(garbage.front().unwrap()));
         println!("Commit B {:?}", HashType::ContextHash.hash_to_b58check(garbage.back().unwrap()));
