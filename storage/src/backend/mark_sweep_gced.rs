@@ -58,7 +58,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
 
         if let Some(items) =  self.commit_store.last_mut() {
 
-            let back = match items.back() {
+            let back = match items.front() {
                 None => {
                     panic!("Not FOUNDDD")
                 }
