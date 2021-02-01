@@ -30,7 +30,7 @@ impl Args {
 
         Self {
             input: matches.value_of("input").unwrap().to_string(),
-            output: matches.value_of("input").unwrap().to_string(),
+            output: matches.value_of("output").unwrap().to_string(),
             limit: matches.value_of("limit").unwrap().parse::<usize>().unwrap(),
         }
     }
@@ -50,7 +50,7 @@ fn rewrite_action_file(args: Args) {
 
         if (k as usize) < limit {
             println!("BLOCK :{}",k );
-            writer.update(block, actions).unwrap();
+            writer.update(block, actions);
         }
     });
 }
