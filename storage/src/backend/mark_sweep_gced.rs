@@ -41,11 +41,13 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     pub fn gc(&mut self, _last_commit_hash: Option<EntryHash>) -> Result<(), KVStoreError> {
         let mut garbage: LinkedHashSet<EntryHash> = self.commit_store.drain(..self.cycle_block_count).into_iter().flatten().collect();
         if let Some(items) =  self.commit_store.last() {
+            println!("Relative Commit ITEMS {}", items.len());
             for i in items.iter() {
                 garbage.remove(i);
             }
         }
         if let Some(items) =  self.commit_store.first() {
+            println!("Recent Commit ITEMS {}", items.len());
             for i in items.iter() {
                 garbage.remove(i);
             }
