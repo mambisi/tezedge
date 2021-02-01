@@ -5,6 +5,7 @@ use crate::merkle_storage::{Entry, EntryHash, ContextValue, hash_entry};
 use crate::storage_backend::{StorageBackend as KVStore, StorageBackendError as KVStoreError, StorageBackendStats as KVStoreStats, size_of_vec, StorageBackendError};
 use linked_hash_set::LinkedHashSet;
 use std::collections::hash_map::RandomState;
+use crypto::hash::HashType;
 
 /// Garbage Collected Key Value Store
 pub struct MarkSweepGCed<T: KVStore> {
@@ -49,8 +50,8 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
             }
         }*/
 
-        println!("Commit F {:?}", garbage.front());
-        println!("Commit B {:?}", garbage.back());
+        println!("Commit F {:?}", HashType::ContextHash.hash_to_b58check(garbage.front().unwrap()));
+        println!("Commit B {:?}", HashType::ContextHash.hash_to_b58check(garbage.back().unwrap()));
 
         for i in self.commit_store.iter().flatten() {
             garbage.remove(i);
