@@ -67,7 +67,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
                 }
             };
             if let Some(commit_hash ) = last_commit_hash {
-                assert_eq!(commit_hash,back, "Last Commit Store not commit")
+                assert_eq!(HashType::ContextHash.hash_to_b58check(commit_hash[..]),HashType::ContextHash.hash_to_b58check(back[..]), "Last Commit Store not commit")
             }
 
             for i in items.iter() {
