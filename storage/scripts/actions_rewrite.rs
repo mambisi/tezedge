@@ -48,8 +48,10 @@ fn rewrite_action_file(args: Args) {
 
         let k = block.block_level;
 
+        if k % 4092 == 0 {
+            println!("> BLOCK :   {}",k );
+        }
         if (k as usize) < limit {
-            println!("BLOCK :{}",k );
             writer.update(block, actions);
         }
     });
