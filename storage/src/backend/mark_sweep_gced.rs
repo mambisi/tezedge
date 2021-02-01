@@ -42,8 +42,8 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         let mut garbage: LinkedHashSet<EntryHash> = self.commit_store.drain(..self.cycle_block_count).into_iter().flatten().collect();
 
 
-        if let Ok(Some(h)) = last_commit_hash {
-            self.mark_entries(&mut garbage, h);
+        if let Some(h) = last_commit_hash {
+            self.mark_entries(&mut garbage, &h);
         }
 
         println!("Commit F {:?}", HashType::ContextHash.hash_to_b58check(garbage.front().unwrap()));
