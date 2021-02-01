@@ -38,39 +38,18 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         }
     }
 
-    pub fn gc(&mut self, last_commit_hash: Option<EntryHash>) -> Result<(), KVStoreError> {
+    pub fn gc(&mut self, _last_commit_hash: Option<EntryHash>) -> Result<(), KVStoreError> {
         let mut garbage: LinkedHashSet<EntryHash> = self.commit_store.drain(..self.cycle_block_count).into_iter().flatten().collect();
-
-
-        if let Some(h) = last_commit_hash {
-            self.mark_entries(&mut garbage, &h);
-        }
-
-        println!("Commit F {:?}", HashType::ContextHash.hash_to_b58check(garbage.front().unwrap()));
-        println!("Commit B {:?}", HashType::ContextHash.hash_to_b58check(garbage.back().unwrap()));
-        println!("Commit Z {:?}", HashType::ContextHash.hash_to_b58check(self.commit_store.first().unwrap().front().unwrap()));
-
-        if let Some(items) =  self.commit_store.last_mut() {
-
-            let back = match items.front() {
-                None => {
-                    panic!("Not FOUNDDD")
-                }
-                Some(b) => {
-                    b.clone()
-                }
-            };
-            if let Some(commit_hash ) = last_commit_hash {
-                assert_eq!(HashType::ContextHash.hash_to_b58check(&commit_hash[..]),HashType::ContextHash.hash_to_b58check(&back[..]), "Last Commit Store not commit")
-            }
-
+        if let Some(items) =  self.commit_store.last() {
             for i in items.iter() {
                 garbage.remove(i);
             }
-
         }
-
-
+        if let Some(items) =  self.commit_store.first() {
+            for i in items.iter() {
+                garbage.remove(i);
+            }
+        }
         self.sweep_entries(garbage);
         Ok(())
     }

@@ -1346,7 +1346,11 @@ impl MerkleStorage {
                     match node_entry {
                         // if child node isn't in staging area it means it
                         // hasn't changed from last commit and we should reuse it.
-                        None => self.db.mark_reused(child_node.entry_hash),
+                        None => {
+                            let entry_hash = child_node.entry_hash;
+                            commit_tree_hashes.insert(entry_hash.clone());
+                            self.db.mark_reused(entry_hash)
+                        },
                         Some(entry) => self.persist_staged_entry_to_db(&entry,commit_tree_hashes)?,
                     }
                 }
