@@ -1,4 +1,4 @@
-use std::io::{BufReader, Read, Seek, SeekFrom};
+use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::fs::{File, OpenOptions};
 use std::error::Error;
 use std::path::{Path};
@@ -7,6 +7,9 @@ use bytes::{BytesMut, Buf, BufMut};
 use std::fmt::Formatter;
 // use crate::context_action_storage::ContextAction;
 use serde::{Serialize, Deserialize};
+
+use anyhow::Result;
+use anyhow::anyhow;
 
 const HEADER_LEN: usize = 12;
 type Hash = Vec<u8>;
@@ -226,14 +229,28 @@ impl Iterator for ActionsFileReader {
             }
         };
         let mut h = [0_u8; 4];
-        self.reader.read_exact(&mut h).unwrap();
+        //stops iteration when content length size cannot be read correctly
+        match self.reader.read_exact(&mut h) {
+            Ok(_) => {}
+            Err(_) => {
+                return None
+            }
+        };
         let content_len = u32::from_be_bytes(h);
         if content_len <= 0 {
             return None;
         }
         let mut b = BytesMut::with_capacity(content_len as usize);
         unsafe { b.set_len(content_len as usize) }
-        self.reader.read_exact(&mut b).unwrap();
+
+        //stops iteration when content length doesnt match exactly
+        match self.reader.read_exact(&mut b){
+            Ok(_) => {}
+            Err(_) => {
+                return None
+            }
+        };
+
 
         let mut reader = snap::read::FrameDecoder::new(b.reader());
 
@@ -247,5 +264,95 @@ impl Iterator for ActionsFileReader {
         };
         self.cursor += h.len() as u64 + content_len as u64;
         Some(item)
+    }
+}
+
+/// # ActionFileWriter
+///
+/// writes block and list actions to file in `path`
+pub struct ActionsFileWriter {
+    header: ActionsFileHeader,
+    file: File,
+}
+
+
+impl ActionsFileWriter {
+    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let mut file = OpenOptions::new().write(true).create(true).read(true).open(path)?;
+        let mut reader = BufReader::new(file.try_clone()?);
+        reader.seek(SeekFrom::Start(0));
+        let mut h = [0_u8; HEADER_LEN];
+        reader.read_exact(&mut h);
+        let header = ActionsFileHeader::from(h);
+        Ok(ActionsFileWriter {
+            file,
+            header,
+        })
+    }
+
+    pub fn header(&self) -> ActionsFileHeader {
+        self.header
+    }
+}
+
+
+unsafe impl Send for ActionsFileWriter {}
+
+unsafe impl Sync for ActionsFileWriter {}
+
+
+impl ActionsFileWriter {
+    pub fn update(&mut self, block: Block, actions: Vec<ContextAction>) -> Result<u32> {
+        let block_level = block.block_level;
+        let actions_count = actions.len() as u32;
+
+        self._fetch_header();
+
+        if block.block_level <= self.header.block_height && self.header.block_count > 0 {
+            return Err(anyhow!("Block already stored"));
+        }
+        if block_level > 0 && self.header.block_height + 1 != block_level {
+            return Err(anyhow!("Block level is greater than N + 1, where N is the current height"));
+        }
+
+        let mut out = Vec::new();
+        let mut writer = snap::write::FrameEncoder::new(&mut out);
+        bincode::serialize_into(writer, &(block, actions))?;
+
+        // Writes the header if its not already set
+        if self.header.block_count <= 0 {
+            let header_bytes = self.header.to_vec();
+            self.file.seek(SeekFrom::Start(0));
+            self.file.write(&header_bytes);
+        }
+        self._update(&out);
+        self._update_header(block_level, actions_count);
+        Ok((block_level + 1))
+    }
+
+    fn _update_header(&mut self, block_level: u32, actions_count: u32) {
+        self.header.block_height = block_level;
+        self.header.actions_count += actions_count;
+        self.header.block_count += 1;
+
+        let header_bytes = self.header.to_vec();
+        self.file.seek(SeekFrom::Start(0));
+        self.file.write(&header_bytes);
+    }
+
+    fn _fetch_header(&mut self) {
+        self.file.seek(SeekFrom::Start(0));
+        let mut h = [0_u8; HEADER_LEN];
+        self.file.read_exact(&mut h);
+        self.header = ActionsFileHeader::from(h);
+    }
+
+    pub fn _update(&mut self, data: &[u8]) {
+        self.file.seek(SeekFrom::End(0));
+        let header = (data.len() as u32).to_be_bytes();
+        let mut dt = vec![];
+        dt.extend_from_slice(&header);
+        dt.extend_from_slice(data);
+        self.file.write(dt.as_slice());
     }
 }
