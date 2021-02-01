@@ -15,19 +15,19 @@ pub struct MarkSweepGCed<T: KVStore> {
     /// number of cycles to retain
     cycle_threshold: usize,
     ///
-    cycle_block_count : usize,
+    cycle_block_count: usize,
     ///
-    last_commit_tree : Option<LinkedHashSet<EntryHash>>
+    last_commit_tree: Option<LinkedHashSet<EntryHash>>,
 }
 
 impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
-    pub fn new(cycle_threshold: usize,cycle_block_count : usize) -> Self {
+    pub fn new(cycle_threshold: usize, cycle_block_count: usize) -> Self {
         Self {
             store: Default::default(),
             cycle_threshold,
             commit_store: Vec::new(),
             cycle_block_count,
-            last_commit_tree: None
+            last_commit_tree: None,
         }
     }
 
@@ -38,19 +38,10 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         }
     }
 
-    pub fn gc(&mut self, _last_commit_hash: Option<EntryHash>) -> Result<(), KVStoreError> {
+    pub fn gc(&mut self, last_commit_hash: Option<EntryHash>) -> Result<(), KVStoreError> {
         let mut garbage: LinkedHashSet<EntryHash> = self.commit_store.drain(..self.cycle_block_count).into_iter().flatten().collect();
-        if let Some(items) =  self.commit_store.last() {
-            println!("Relative Commit ITEMS {}", items.len());
-            for i in items.iter() {
-                garbage.remove(i);
-            }
-        }
-        if let Some(items) =  self.commit_store.first() {
-            println!("Recent Commit ITEMS {}", items.len());
-            for i in items.iter() {
-                garbage.remove(i);
-            }
+        if let Some(entry_hash) = last_commit_hash {
+            self.mark_entries(&mut garbage, &entry_hash);
         }
         self.sweep_entries(garbage);
         Ok(())
@@ -59,7 +50,7 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
     fn mark_entries(&self, garbage: &mut LinkedHashSet<EntryHash>, entry_hash: &EntryHash) {
         if let Ok(Some(Entry::Commit(entry))) = self.get_entry(entry_hash) {
             self.mark_entries_recursively(&Entry::Commit(entry), garbage);
-        }else {
+        } else {
             panic!("Not commit")
         }
     }
@@ -161,7 +152,7 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
     fn mark_reused(&mut self, _key: EntryHash) {}
 
     fn start_new_cycle(&mut self, last_commit_hash: Option<EntryHash>) {
-        if self.commit_store.len() >= ( self.cycle_threshold  + 1)* self.cycle_block_count {
+        if self.commit_store.len() >= (self.cycle_threshold + 1) * self.cycle_block_count {
             self.gc(last_commit_hash);
         }
     }
