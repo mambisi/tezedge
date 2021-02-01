@@ -38,8 +38,10 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         }
     }
 
-    pub fn gc(&mut self) -> Result<(), KVStoreError> {
+    pub fn gc(&mut self, last_commit_hash: Option<EntryHash>) -> Result<(), KVStoreError> {
         let mut garbage: LinkedHashSet<EntryHash> = self.commit_store.drain(..self.cycle_block_count).into_iter().flatten().collect();
+
+
         /*
         let mut garbage: HashSet<EntryHash> = HashSet::new();
         for root in garbage_roots.iter() {
@@ -54,8 +56,21 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         println!("Commit B {:?}", HashType::ContextHash.hash_to_b58check(garbage.back().unwrap()));
         println!("Commit Z {:?}", HashType::ContextHash.hash_to_b58check(self.commit_store.first().unwrap().front().unwrap()));
 
-        if let Some(items) =  self.commit_store.last() {
-            for i in items {
+        if let Some(items) =  self.commit_store.last_mut() {
+
+            let back = match items.back() {
+                None => {
+                    panic!("Not FOUNDDD")
+                }
+                Some(b) => {
+                    b.clone()
+                }
+            };
+            if let Some(commit_hash ) = last_commit_hash {
+                assert_eq!(commit_hash,back, "Last Commit Store not commit")
+            }
+
+            for i in items.iter() {
                 garbage.remove(i);
             }
 
@@ -170,9 +185,9 @@ impl<T: 'static + KVStore + Default> KVStore for MarkSweepGCed<T> {
 
     fn mark_reused(&mut self, _key: EntryHash) {}
 
-    fn start_new_cycle(&mut self, _last_commit_hash: Option<EntryHash>) {
+    fn start_new_cycle(&mut self, last_commit_hash: Option<EntryHash>) {
         if self.commit_store.len() >= ( self.cycle_threshold  + 1)* self.cycle_block_count {
-            self.gc();
+            self.gc(last_commit_hash);
         }
     }
 
