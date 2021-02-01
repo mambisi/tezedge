@@ -46,9 +46,10 @@ fn rewrite_action_file(args: Args) {
     let reader = ActionsFileReader::new(args.input).unwrap();
     reader.for_each(|(block, actions)| {
 
-        //let k = block.block_level;
+        let k = block.block_level;
 
-        if (block.block_level as usize) < limit {
+        if (k as usize) < limit {
+            println!("BLOCK :{}",k );
             writer.update(block, actions);
         }
     });
