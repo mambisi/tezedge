@@ -50,7 +50,7 @@ fn rewrite_action_file(args: Args) {
 
         if (k as usize) < limit {
             println!("BLOCK :{}",k );
-            writer.update(block, actions);
+            writer.update(block, actions).unwrap();
         }
     });
 }
