@@ -54,8 +54,11 @@ impl<T: 'static + KVStore + Default> MarkSweepGCed<T> {
         println!("Commit B {:?}", HashType::ContextHash.hash_to_b58check(garbage.back().unwrap()));
         println!("Commit Z {:?}", HashType::ContextHash.hash_to_b58check(self.commit_store.first().unwrap().front().unwrap()));
 
-        for i in self.commit_store.iter().flatten() {
-            garbage.remove(i);
+        if let Some(items) =  self.commit_store.last() {
+            for i in items {
+                garbage.remove(i);
+            }
+
         }
 
 
