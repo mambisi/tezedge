@@ -42,7 +42,7 @@ name = "merkle_storage_stats"
 path = "scripts/merkle_storage_stats.rs"
 
 [[bin]]
-name = "actiosn_rewrite"
+name = "actions_rewrite"
 path = "scripts/actions_rewrite.rs"
 
 [dev-dependencies]
