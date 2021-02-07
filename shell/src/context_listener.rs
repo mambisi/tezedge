@@ -239,7 +239,7 @@ fn listen_protocol_events(
                         afs.store_action(log, msg.clone())
                     }
                 };
-                println!("{:#?}", &msg);
+                println!("{:?}", &msg.action);
                 if msg.perform {
                     perform_context_action(&msg.action, context)?;
                 }
