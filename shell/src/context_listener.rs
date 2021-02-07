@@ -263,9 +263,7 @@ fn listen_protocol_events(
                         }
                     }
                     ContextAction::Checkout { context_hash, ..} => {
-                        if let Some(hash) = block_hash {
-                            println!("CHECKOUT: Block Hash   {}",  HashType::ContextHash.hash_to_b58check(hash))
-                        }
+                        println!("CHECKOUT: Context Hash   {}",  HashType::ContextHash.hash_to_b58check(context_hash))
                     }
                     ContextAction::Commit { block_hash, .. } => {
                         if let Some(hash) = block_hash {
