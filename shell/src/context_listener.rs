@@ -295,7 +295,6 @@ fn listen_protocol_events(
                     }
                 }
 
-                println!("{:?}", &msg.action);
                 if msg.perform {
                     perform_context_action(&msg.action, context)?;
                 }
