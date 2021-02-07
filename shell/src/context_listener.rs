@@ -209,9 +209,9 @@ fn listen_protocol_events(
     while apply_block_run.load(Ordering::Acquire) {
         match rx.receive() {
             Ok(ContextActionMessage {
-                action: ContextAction::Shutdown,
-                ..
-            }) => {
+                   action: ContextAction::Shutdown,
+                   ..
+               }) => {
                 apply_block_run.store(false, Ordering::Release);
             }
             Ok(msg) => {
@@ -238,9 +238,8 @@ fn listen_protocol_events(
                         //info!(log,"Storing action");
                         afs.store_action(log, msg.clone())
                     }
-
                 };
-
+                println!("{:#?}", &msg);
                 if msg.perform {
                     perform_context_action(&msg.action, context)?;
                 }
