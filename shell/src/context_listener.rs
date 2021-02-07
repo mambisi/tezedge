@@ -239,6 +239,64 @@ fn listen_protocol_events(
                         afs.store_action(log, msg.clone())
                     }
                 };
+
+                match &msg.action {
+                    ContextAction::Set { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("SET: Block Hash   {}", hash.to_base58())
+                        }
+
+                    }
+                    ContextAction::Delete { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("DELETE: Block Hash   {}", hash.to_base58())
+                        }
+                    }
+                    ContextAction::RemoveRecursively {block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("REMOVE_RECUR: Block Hash   {}", hash.to_base58())
+                        }
+                    }
+                    ContextAction::Copy { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("COPY: Block Hash   {}", hash.to_base58())
+                        }
+                    }
+                    ContextAction::Checkout { context_hash, ..} => {
+                        if let Some(hash) = block_hash {
+                            println!("CHECKOUT: Block Hash   {}", hash.to_base58())
+                        }
+                    }
+                    ContextAction::Commit { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("COMMIT: Block Hash   {}", hash.to_base58())
+                        }
+                    }
+                    ContextAction::Mem { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("MEM: Block Hash   {}", hash.to_base58())
+                        }
+                    }
+                    ContextAction::DirMem { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("DIRMEM: Block Hash   {}", hash.to_base58())
+                        }
+                    }
+                    ContextAction::Get { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("GET: Block Hash   {}", hash.to_base58())
+                        }
+                    }
+                    ContextAction::Fold {block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("FOLD: Block Hash   {}", hash.to_base58())
+                        }
+                    }
+                    ContextAction::Shutdown => {
+                        println!("SHUTDOWN")
+                    }
+                }
+
                 println!("{:?}", &msg.action);
                 if msg.perform {
                     perform_context_action(&msg.action, context)?;
