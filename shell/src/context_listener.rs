@@ -179,6 +179,8 @@ fn listen_protocol_events(
                     event_count + 1
                 };
 
+                println!("{:#?}", &msg);
+
                 action_store_backend.record(&msg)?;
 
                 if msg.perform {
