@@ -243,51 +243,51 @@ fn listen_protocol_events(
                 match &msg.action {
                     ContextAction::Set { block_hash, .. } => {
                         if let Some(hash) = block_hash {
-                            println!("SET: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                            println!("SET: Block Hash   {} Perform: {}", HashType::BlockHash.hash_to_b58check(hash), &msg.perform)
                         }
 
                     }
                     ContextAction::Delete { block_hash, .. } => {
                         if let Some(hash) = block_hash {
-                            println!("DELETE: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                            println!("DELETE: Block Hash   {} Perform: {}", HashType::BlockHash.hash_to_b58check(hash),&msg.perform)
                         }
                     }
                     ContextAction::RemoveRecursively {block_hash, .. } => {
                         if let Some(hash) = block_hash {
-                            println!("REMOVE_RECUR: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                            println!("REMOVE_RECUR: Block Hash   {} Perform: {}", HashType::BlockHash.hash_to_b58check(hash),&msg.perform)
                         }
                     }
                     ContextAction::Copy { block_hash, .. } => {
                         if let Some(hash) = block_hash {
-                            println!("COPY: Block Hash   {}",  HashType::BlockHash.hash_to_b58check(hash))
+                            println!("COPY: Block Hash   {} Perform: {}",  HashType::BlockHash.hash_to_b58check(hash),&msg.perform)
                         }
                     }
                     ContextAction::Checkout { context_hash, ..} => {
-                        println!("CHECKOUT: Context Hash   {}",  HashType::ContextHash.hash_to_b58check(context_hash))
+                        println!("CHECKOUT: Context Hash   {} Perform: {}",  HashType::ContextHash.hash_to_b58check(context_hash),&msg.perform)
                     }
                     ContextAction::Commit { block_hash, .. } => {
                         if let Some(hash) = block_hash {
-                            println!("COMMIT: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                            println!("COMMIT: Block Hash   {} Perform: {}", HashType::BlockHash.hash_to_b58check(hash),&msg.perform)
                         }
                     }
                     ContextAction::Mem { block_hash, .. } => {
                         if let Some(hash) = block_hash {
-                            println!("MEM: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                            println!("MEM: Block Hash   {} Perform: {}", HashType::BlockHash.hash_to_b58check(hash),&msg.perform)
                         }
                     }
                     ContextAction::DirMem { block_hash, .. } => {
                         if let Some(hash) = block_hash {
-                            println!("DIR_MEM: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                            println!("DIR_MEM: Block Hash   {} Perform: {}", HashType::BlockHash.hash_to_b58check(hash),&msg.perform)
                         }
                     }
                     ContextAction::Get { block_hash, .. } => {
                         if let Some(hash) = block_hash {
-                            println!("GET: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                            println!("GET: Block Hash   {} Perform: {}", HashType::BlockHash.hash_to_b58check(hash),&msg.perform)
                         }
                     }
                     ContextAction::Fold {block_hash, .. } => {
                         if let Some(hash) = block_hash {
-                            println!("FOLD: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                            println!("FOLD: Block Hash   {} Perform: {}", HashType::BlockHash.hash_to_b58check(hash),&msg.perform)
                         }
                     }
                     ContextAction::Shutdown => {
