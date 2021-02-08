@@ -222,6 +222,61 @@ fn listen_protocol_events(
                 event_count += 1;
 
                 match &msg {
+                    ContextAction::Set { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("SET: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                        }
+
+                    }
+                    ContextAction::Delete { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("DELETE: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                        }
+                    }
+                    ContextAction::RemoveRecursively {block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("REMOVE_RECUR: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                        }
+                    }
+                    ContextAction::Copy { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("COPY: Block Hash   {}",  HashType::BlockHash.hash_to_b58check(hash))
+                        }
+                    }
+                    ContextAction::Checkout { context_hash, ..} => {
+                        println!("CHECKOUT: Context Hash   {}",  HashType::ContextHash.hash_to_b58check(context_hash))
+                    }
+                    ContextAction::Commit { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("COMMIT: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                        }
+                    }
+                    ContextAction::Mem { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("MEM: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                        }
+                    }
+                    ContextAction::DirMem { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("DIR_MEM: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                        }
+                    }
+                    ContextAction::Get { block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("GET: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                        }
+                    }
+                    ContextAction::Fold {block_hash, .. } => {
+                        if let Some(hash) = block_hash {
+                            println!("FOLD: Block Hash   {}", HashType::BlockHash.hash_to_b58check(hash))
+                        }
+                    }
+                    ContextAction::Shutdown => {
+                        println!("SHUTDOWN")
+                    }
+                }
+
+                match &msg {
                     ContextAction::Get { key, .. } => {
                         context.get_key(key)?;
                     }
