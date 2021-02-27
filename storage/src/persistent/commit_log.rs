@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use crate::persistent::codec::{Decoder, Encoder, SchemaError};
 use crate::persistent::schema::{CommitLogDescriptor, CommitLogSchema};
 use crate::persistent::BincodeEncoded;
+use std::io::{Write, Read};
 
 pub type CommitLogRef = Arc<RwLock<CommitLog>>;
 
@@ -103,11 +104,18 @@ impl<S: CommitLogSchema> CommitLogWithSchema<S> for CommitLogs {
             .ok_or(CommitLogError::MissingCommitLog { name: S::name() })?;
         let mut cl = cl.write().expect("Write lock failed");
         let bytes = value.encode()?;
+
+        let mut compressed_bytes = vec![];
+        {
+            //compress data
+            let mut wtr = snap::write::FrameEncoder::new(&mut compressed_bytes);
+            wtr.write_all(&bytes)?;
+        }
         let offset = cl
-            .append_msg(&bytes)
+            .append_msg(&compressed_bytes)
             .map_err(|error| CommitLogError::AppendError { error })?;
 
-        Ok(Location(offset, bytes.len()))
+        Ok(Location(offset, compressed_bytes.len()))
     }
 
     fn get(&self, location: &Location) -> Result<S::Value, CommitLogError> {
@@ -125,7 +133,13 @@ impl<S: CommitLogSchema> CommitLogWithSchema<S> for CommitLogs {
             error: ReadError::CorruptLog,
             location: *location,
         })?;
-        let value = S::Value::decode(bytes.payload())?;
+        let mut decompressed_data = vec![];
+        {
+            //decompress data
+            let mut rdr = snap::read::FrameDecoder::new(bytes.payload());
+            rdr.read_to_end(&mut decompressed_data)?;
+        }
+        let value = S::Value::decode(&decompressed_data)?;
 
         Ok(value)
     }
@@ -145,7 +159,13 @@ impl<S: CommitLogSchema> CommitLogWithSchema<S> for CommitLogs {
             .iter()
             .take(range.2 as usize)
             .map(|message| {
-                S::Value::decode(message.payload()).map_err(|_| CommitLogError::ReadError {
+                let mut decompressed_data = vec![];
+                {
+                    //decompress data
+                    let mut rdr = snap::read::FrameDecoder::new(message.payload());
+                    rdr.read_to_end(&mut decompressed_data)?;
+                }
+                S::Value::decode(&decompressed_data).map_err(|_| CommitLogError::ReadError {
                     error: ReadError::CorruptLog,
                     location: Location(message.offset(), message.size() as usize),
                 })
