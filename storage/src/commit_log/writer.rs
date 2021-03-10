@@ -107,9 +107,8 @@ impl Writer {
     }
 
     pub fn to_reader(&self) -> Result<Reader, TezedgeCommitLogError> {
-        self.index_file.sync_all()?;
-        self.data_file.sync_all()?;
-        let reader = Reader::new(self.index.clone(), self.index_file.try_clone()?, self.data_file.try_clone()? );
+
+        let reader = Reader::new(self.index.clone(),  self.data_file.try_clone()? );
         reader
     }
 

@@ -6,40 +6,21 @@ use std::path::{Path, PathBuf};
 
 pub(crate) struct Reader {
     indexes : Vec<Index>,
-    index_file : File,
     data_file: File,
 }
 
 impl Reader {
-    pub(crate) fn new(indexes : Vec<Index>, index_file : File, data_file : File) -> Result<Self, TezedgeCommitLogError> {
+    pub(crate) fn new(indexes : Vec<Index>, data_file : File) -> Result<Self, TezedgeCommitLogError> {
 
         let reader = Self {
             indexes,
-index_file,
             data_file,
         };
         Ok(reader)
     }
 
     pub fn indexes(&self) -> Vec<Index> {
-        let mut index_file_buf_reader = BufReader::new(&self.index_file);
-        match index_file_buf_reader.seek(SeekFrom::Start(0)) {
-            Ok(_) => {}
-            Err(_) => return vec![],
-        };
-        let mut indexes = vec![];
-        let mut buf = Vec::new();
-        match index_file_buf_reader.read_to_end(&mut buf) {
-            Ok(_) => {}
-            Err(_) => return vec![],
-        };
-        let header_chunks = buf.chunks_exact(TH_LENGTH);
-        for chunk in header_chunks {
-            let th = Index::from_buf(chunk).unwrap();
-            indexes.push(th)
-        }
-
-        indexes
+        self.indexes.clone()
     }
 
     pub(crate) fn range(
