@@ -5,15 +5,17 @@ use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
 pub(crate) struct Reader {
-    index_file: File,
+    indexes : Vec<Index>,
+    index_file : File,
     data_file: File,
 }
 
 impl Reader {
-    pub(crate) fn new(index_file : File, data_file : File) -> Result<Self, TezedgeCommitLogError> {
+    pub(crate) fn new(indexes : Vec<Index>, index_file : File, data_file : File) -> Result<Self, TezedgeCommitLogError> {
 
         let reader = Self {
-            index_file,
+            indexes,
+index_file,
             data_file,
         };
         Ok(reader)

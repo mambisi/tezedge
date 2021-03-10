@@ -1,12 +1,13 @@
 use crate::commit_log::error::TezedgeCommitLogError;
 use crate::commit_log::{Index, DATA_FILE_NAME, INDEX_FILE_NAME, TH_LENGTH};
 use std::fs::{File, OpenOptions};
-use std::io::{BufWriter, Seek, SeekFrom, Write};
+use std::io::{BufWriter, Seek, SeekFrom, Write, BufReader, Read};
 use std::ops::Sub;
 use std::path::{Path, PathBuf};
 use crate::commit_log::reader::Reader;
 
 pub(crate) struct Writer {
+    index : Vec<Index>,
     index_file: File,
     data_file: File,
 }
@@ -42,7 +43,10 @@ impl Writer {
             .read(true)
             .open(data_file_path.as_path())?;
 
+
+
         Ok(Self {
+            index : Self::read_indexes(&index_file),
             index_file,
             data_file,
         })
@@ -50,21 +54,47 @@ impl Writer {
 
     pub(crate) fn write(&mut self, buf: &[u8]) -> Result<u64, TezedgeCommitLogError> {
         {
-            let mut index_file_buf_writer = BufWriter::new(&mut self.index_file);
-            let mut data_file_buf_writer = BufWriter::new(&mut self.data_file);
+
             if buf.len() > u64::MAX as usize {
                 return Err(TezedgeCommitLogError::MessageLengthError);
             }
-            let message_len = buf.len() as u64;
-            let message_pos = data_file_buf_writer.seek(SeekFrom::End(0))?;
-            data_file_buf_writer.write_all(&buf)?;
-            let th = Index::new(message_pos, message_len);
-            index_file_buf_writer.seek(SeekFrom::End(0))?;
-            index_file_buf_writer.write_all(&th.to_vec())?;
-            data_file_buf_writer.flush()?;
-            index_file_buf_writer.flush()?;
+
+                let mut index_file_buf_writer = BufWriter::new(&mut self.index_file);
+                let mut data_file_buf_writer = BufWriter::new(&mut self.data_file);
+                let message_len = buf.len() as u64;
+                let message_pos = data_file_buf_writer.seek(SeekFrom::End(0))?;
+                data_file_buf_writer.write_all(&buf)?;
+                let th = Index::new(message_pos, message_len);
+                index_file_buf_writer.seek(SeekFrom::End(0))?;
+                index_file_buf_writer.write_all(&th.to_vec())?;
+                data_file_buf_writer.flush()?;
+                index_file_buf_writer.flush()?;
+                self.index.push(th.clone());
+
+
         }
         Ok(self.last_index() as u64)
+    }
+
+    fn read_indexes(index_file : &File)  -> Vec<Index>{
+        let mut index_file_buf_reader = BufReader::new(index_file);
+        match index_file_buf_reader.seek(SeekFrom::Start(0)) {
+            Ok(_) => {}
+            Err(_) => return vec![],
+        };
+        let mut indexes = vec![];
+        let mut buf = Vec::new();
+        match index_file_buf_reader.read_to_end(&mut buf) {
+            Ok(_) => {}
+            Err(_) => return vec![],
+        };
+        let header_chunks = buf.chunks_exact(TH_LENGTH);
+        for chunk in header_chunks {
+            let th = Index::from_buf(chunk).unwrap();
+            indexes.push(th)
+        }
+
+        indexes
     }
 
     pub fn last_index(&self) -> i64 {
@@ -77,7 +107,9 @@ impl Writer {
     }
 
     pub fn to_reader(&self) -> Result<Reader, TezedgeCommitLogError> {
-        let reader = Reader::new(self.index_file.try_clone()?, self.data_file.try_clone()? );
+        self.index_file.sync_all()?;
+        self.data_file.sync_all()?;
+        let reader = Reader::new(self.index.clone(), self.index_file.try_clone()?, self.data_file.try_clone()? );
         reader
     }
 
