@@ -10,36 +10,12 @@ pub(crate) struct Reader {
 }
 
 impl Reader {
-    pub(crate) fn new<P: AsRef<Path>>(dir: P) -> Result<Self, TezedgeCommitLogError> {
-        if !dir.as_ref().exists() {
-            return Err(TezedgeCommitLogError::PathError);
-        }
-
-        let mut index_file_path = PathBuf::new();
-        index_file_path.push(dir.as_ref());
-        index_file_path.push(INDEX_FILE_NAME);
-
-        let mut data_file_path = PathBuf::new();
-        data_file_path.push(dir.as_ref());
-        data_file_path.push(DATA_FILE_NAME);
-
-        let index_file = OpenOptions::new()
-            .create(false)
-            .write(false)
-            .read(true)
-            .open(index_file_path.as_path())?;
-
-        let data_file = OpenOptions::new()
-            .create(false)
-            .write(false)
-            .read(true)
-            .open(data_file_path.as_path())?;
+    pub(crate) fn new(index_file : File, data_file : File) -> Result<Self, TezedgeCommitLogError> {
 
         let reader = Self {
             index_file,
             data_file,
         };
-
         Ok(reader)
     }
 

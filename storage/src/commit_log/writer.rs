@@ -4,11 +4,14 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Seek, SeekFrom, Write};
 use std::ops::Sub;
 use std::path::{Path, PathBuf};
+use crate::commit_log::reader::Reader;
 
 pub(crate) struct Writer {
     index_file: File,
     data_file: File,
 }
+
+
 
 impl Writer {
     pub(crate) fn new<P: AsRef<Path>>(dir: P) -> Result<Self, TezedgeCommitLogError> {
@@ -72,6 +75,12 @@ impl Writer {
         let items_count = metadata.len() / (TH_LENGTH as u64);
         (items_count as i64).sub(1)
     }
+
+    pub fn to_reader(&self) -> Result<Reader, TezedgeCommitLogError> {
+        let reader = Reader::new(self.index_file.try_clone()?, self.data_file.try_clone()? );
+        reader
+    }
+
 
     pub(crate) fn flush(&mut self) -> Result<(), TezedgeCommitLogError> {
         self.data_file.flush()?;

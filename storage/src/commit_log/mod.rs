@@ -126,9 +126,8 @@ impl CommitLog {
         Ok(offset)
     }
 
-    #[inline]
     pub fn read(&self, from: usize, limit: usize) -> Result<MessageSet, TezedgeCommitLogError> {
-        let reader = Reader::new(&self.path)?;
+        let reader = self.writer.to_reader()?;
         reader.range(from, limit)
     }
 
