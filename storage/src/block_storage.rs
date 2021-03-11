@@ -165,7 +165,6 @@ impl BlockStorage {
             // we assume that, if primary_index contains hash, then also commit_log contains header data, header data cannot be change, so there is nothing to do
             return Ok(false);
         }
-
         self.clog
             .append(&BlockStorageColumn::BlockHeader(block_header.clone()))
             .map_err(StorageError::from)
